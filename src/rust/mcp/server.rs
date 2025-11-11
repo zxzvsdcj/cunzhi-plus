@@ -7,8 +7,9 @@ use rmcp::{
 };
 use std::collections::HashMap;
 
-use super::tools::{InteractionTool, MemoryTool};
+use super::tools::{InteractionTool, MemoryTool, EnhanceTool};
 use super::types::{ZhiRequest, JiyiRequest};
+use super::tools::enhance::EnhanceRequest;
 use crate::config::load_standalone_config;
 use crate::{log_important, log_debug};
 
@@ -116,6 +117,63 @@ impl ServerHandler for ZhiServer {
             });
         }
 
+        // 提示词增强工具 - 始终可用(核心功能)
+        let enhance_schema = serde_json::json!({
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "用户原始输入"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "string",
+                                "description": "base64编码的图片数据"
+                            },
+                            "media_type": {
+                                "type": "string",
+                                "description": "MIME类型,如image/png"
+                            },
+                            "filename": {
+                                "type": "string",
+                                "description": "文件名(可选)"
+                            }
+                        },
+                        "required": ["data", "media_type"]
+                    },
+                    "description": "图片附件(base64编码,可选)"
+                },
+                "enable_pipeline": {
+                    "type": "boolean",
+                    "description": "是否启用四阶管线,默认true"
+                },
+                "enable_scoring": {
+                    "type": "boolean",
+                    "description": "是否启用寸止评分闭环,默认true"
+                },
+                "target_score": {
+                    "type": "integer",
+                    "description": "目标质量分数(0-100),默认90",
+                    "minimum": 0,
+                    "maximum": 100
+                }
+            },
+            "required": ["prompt"]
+        });
+
+        if let serde_json::Value::Object(schema_map) = enhance_schema {
+            tools.push(Tool {
+                name: Cow::Borrowed("enhance"),
+                description: Some(Cow::Borrowed("提示词增强工具，支持多模态输入、四阶管线、寸止评分闭环，提升需求理解和代码质量")),
+                input_schema: Arc::new(schema_map),
+                annotations: None,
+            });
+        }
+
         // 记忆管理工具 - 仅在启用时添加
         if self.is_tool_enabled("ji") {
             let ji_schema = serde_json::json!({
@@ -178,6 +236,18 @@ impl ServerHandler for ZhiServer {
 
                 // 调用寸止工具
                 InteractionTool::zhi(zhi_request).await
+            }
+            "enhance" => {
+                // 解析请求参数
+                let arguments_value = request.arguments
+                    .map(serde_json::Value::Object)
+                    .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+
+                let enhance_request: EnhanceRequest = serde_json::from_value(arguments_value)
+                    .map_err(|e| McpError::invalid_params(format!("参数解析失败: {}", e), None))?;
+
+                // 调用提示词增强工具
+                EnhanceTool::enhance(enhance_request).await
             }
             "ji" => {
                 // 检查记忆管理工具是否启用

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{model::*, Error as McpError};
+use rmcp::{model::*, ErrorData as McpError};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs;
@@ -44,8 +44,18 @@ impl AcemcpTool {
 
         // 执行：增量索引（含批量上传）+ 检索
         match index_and_search(&acemcp_config, &request.project_root_path, &request.query).await {
-            Ok(text) => Ok(CallToolResult { content: vec![Content::text(text)], is_error: None }),
-            Err(e) => Ok(CallToolResult { content: vec![Content::text(format!("Acemcp执行失败: {}", e))], is_error: Some(true) })
+            Ok(text) => Ok(CallToolResult { 
+                content: vec![Content::text(text)], 
+                is_error: None,
+                meta: None,
+                structured_content: None,
+            }),
+            Err(e) => Ok(CallToolResult { 
+                content: vec![Content::text(format!("Acemcp执行失败: {}", e))], 
+                is_error: Some(true),
+                meta: None,
+                structured_content: None,
+            })
         }
     }
 
@@ -88,6 +98,10 @@ impl AcemcpTool {
                 description: Some(Cow::Borrowed("基于查询在特定项目中搜索相关的代码上下文。此工具在搜索前自动执行增量索引，确保结果始终是最新的。返回代码库中与查询语义相关的格式化文本片段。")),
                 input_schema: Arc::new(schema_map),
                 annotations: None,
+                icons: None,
+                meta: None,
+                output_schema: None,
+                title: None,
             }
         } else {
             panic!("Schema creation failed");

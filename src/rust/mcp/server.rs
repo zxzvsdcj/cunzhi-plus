@@ -1,6 +1,6 @@
 use anyhow::Result;
 use rmcp::{
-    Error as McpError, ServerHandler, ServiceExt, RoleServer,
+    ErrorData as McpError, ServerHandler, ServiceExt, RoleServer,
     model::*,
     transport::stdio,
     service::RequestContext,
@@ -64,6 +64,9 @@ impl ServerHandler for ZhiServer {
             server_info: Implementation {
                 name: "Zhi-mcp".to_string(),
                 version: env!("CARGO_PKG_VERSION").to_string(),
+                title: None,
+                website_url: None,
+                icons: None,
             },
             instructions: Some("Zhi 智能代码审查工具，支持交互式对话和记忆管理".to_string()),
         }
@@ -114,6 +117,10 @@ impl ServerHandler for ZhiServer {
                 description: Some(Cow::Borrowed("智能代码审查交互工具，支持预定义选项、自由文本输入和图片上传")),
                 input_schema: Arc::new(schema_map),
                 annotations: None,
+                icons: None,
+                meta: None,
+                output_schema: None,
+                title: None,
             });
         }
 
@@ -171,6 +178,10 @@ impl ServerHandler for ZhiServer {
                 description: Some(Cow::Borrowed("提示词增强工具，支持多模态输入、四阶管线、寸止评分闭环，提升需求理解和代码质量")),
                 input_schema: Arc::new(schema_map),
                 annotations: None,
+                icons: None,
+                meta: None,
+                output_schema: None,
+                title: None,
             });
         }
 
@@ -205,7 +216,11 @@ impl ServerHandler for ZhiServer {
                     description: Some(Cow::Borrowed("全局记忆管理工具，用于存储和管理重要的开发规范、用户偏好和最佳实践")),
                     input_schema: Arc::new(schema_map),
                     annotations: None,
-                });
+                icons: None,
+                meta: None,
+                output_schema: None,
+                title: None,
+            });
             }
         }
 

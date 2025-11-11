@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{Error as McpError, model::*};
+use rmcp::{ErrorData as McpError, model::*};
 
 use crate::mcp::{ZhiRequest, PopupRequest};
 use crate::mcp::handlers::{create_tauri_popup, parse_mcp_response};

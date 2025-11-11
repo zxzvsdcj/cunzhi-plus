@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{Error as McpError, model::Content};
+use rmcp::{ErrorData as McpError, model::Content};
 
 use crate::mcp::types::{McpResponse, McpResponseContent};
 

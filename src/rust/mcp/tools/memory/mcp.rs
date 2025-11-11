@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{Error as McpError, model::*};
+use rmcp::{ErrorData as McpError, model::*};
 
 use super::{MemoryManager, MemoryCategory};
 use crate::mcp::{JiyiRequest, utils::{validate_project_path, project_path_error}};

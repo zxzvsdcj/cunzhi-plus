@@ -1,6 +1,6 @@
 // 提示词增强MCP工具实现
 use anyhow::Result;
-use rmcp::{Error as McpError, model::*};
+use rmcp::{ErrorData as McpError, model::*};
 use chrono::Utc;
 use std::time::Instant;
 

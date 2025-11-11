@@ -2,7 +2,7 @@
 /// 
 /// 提供统一的错误处理和转换功能
 
-use rmcp::Error as McpError;
+use rmcp::ErrorData as McpError;
 
 /// MCP 错误类型枚举
 #[derive(Debug, thiserror::Error)]

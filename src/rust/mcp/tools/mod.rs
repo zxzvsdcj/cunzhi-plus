@@ -4,8 +4,10 @@
 pub mod memory;
 pub mod interaction;
 pub mod enhance;
+pub mod acemcp;
 
 // 重新导出工具以便访问
 pub use memory::MemoryTool;
 pub use interaction::InteractionTool;
 pub use enhance::EnhanceTool;
+pub use acemcp::AcemcpTool;

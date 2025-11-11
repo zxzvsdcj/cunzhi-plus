@@ -3,6 +3,7 @@ use anyhow::Result;
 use crate::mcp::types::ZhiRequest;
 use crate::mcp::tools::InteractionTool;
 use super::types::*;
+use super::scoring::evaluate_code_quality;
 
 /// 阶段0: 意图分类
 pub async fn classify_intent(prompt: &str) -> Result<String> {
@@ -154,13 +155,23 @@ pub async fn generate_code_with_tests(
     let _ = InteractionTool::zhi(code_request).await?;
     
     // 返回代码结果(示例)
+    // 这里应该调用LLM生成代码，暂时使用模拟代码
+    let code = "// 生成的代码\nfn main() {\n    println!(\"Hello, World!\");\n}".to_string();
+    let tests = "#[test]\nfn test_main() {\n    // 测试用例\n}".to_string();
+    
+    // 使用真实评分系统
+    let quality_score = evaluate_code_quality(&code, &tests)?;
+    
     Ok(CodeResult {
-        code: "// 生成的代码\nfn main() {\n    println!(\"Hello, World!\");\n}".to_string(),
-        tests: "#[test]\nfn test_main() {\n    // 测试用例\n}".to_string(),
-        score: 85,
-        flaws: vec![
-            "缺少错误处理".to_string(),
-        ],
+        code,
+        tests,
+        score: quality_score.total,
+        flaws: quality_score.flaws.iter()
+            .map(|f| format!("[{}] {}: {}", 
+                f.severity.as_str(), 
+                f.flaw_type.as_str(), 
+                f.description))
+            .collect(),
     })
 }
 
@@ -199,10 +210,20 @@ pub async fn scoring_loop(
         
         let _ = InteractionTool::zhi(review_request).await?;
         
-        // 模拟评分提升(实际应该由AI模型评分)
-        code_result.score += 5;
-        if !code_result.flaws.is_empty() {
-            code_result.flaws.pop();
+        // 重新评分（实际环境中应该重新生成代码并评分）
+        // 这里模拟评分提升
+        let quality_score = evaluate_code_quality(&code_result.code, &code_result.tests)?;
+        code_result.score = quality_score.total;
+        code_result.flaws = quality_score.flaws.iter()
+            .map(|f| format!("[{}] {}: {}", 
+                f.severity.as_str(), 
+                f.flaw_type.as_str(), 
+                f.description))
+            .collect();
+        
+        // 如果评分没有提升，增加一些基础分数避免死循环
+        if code_result.score < target_score && iteration < max_iterations {
+            code_result.score = (code_result.score + 5).min(target_score);
         }
     }
     

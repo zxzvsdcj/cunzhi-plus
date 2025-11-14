@@ -892,3 +892,37 @@ pub async fn reset_shortcuts_to_default(
 
     Ok(())
 }
+
+/// 获取更新器配置
+#[tauri::command]
+pub async fn get_updater_config(state: State<'_, AppState>) -> Result<crate::config::UpdaterConfig, String> {
+    let config = state
+        .config
+        .lock()
+        .map_err(|e| format!("获取配置失败: {}", e))?;
+    Ok(config.updater_config.clone())
+}
+
+/// 更新自动检查更新配置
+#[tauri::command]
+pub async fn update_auto_check_updates(
+    enabled: bool,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<(), String> {
+    {
+        let mut config = state
+            .config
+            .lock()
+            .map_err(|e| format!("获取配置失败: {}", e))?;
+        
+        config.updater_config.auto_check_updates = enabled;
+    }
+
+    // 保存配置到文件
+    save_config(&state, &app)
+        .await
+        .map_err(|e| format!("保存配置失败: {}", e))?;
+
+    Ok(())
+}

@@ -19,6 +19,8 @@ pub struct AppConfig {
     pub custom_prompt_config: CustomPromptConfig, // 自定义prompt配置
     #[serde(default = "default_shortcut_config")]
     pub shortcut_config: ShortcutConfig, // 自定义快捷键配置
+    #[serde(default = "default_updater_config")]
+    pub updater_config: UpdaterConfig, // 自动更新配置
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -190,6 +192,12 @@ pub struct TelegramConfig {
     pub api_base_url: String, // Telegram API基础URL
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UpdaterConfig {
+    #[serde(default = "default_auto_check_updates")]
+    pub auto_check_updates: bool, // 是否启用自动检查更新
+}
+
 #[derive(Debug)]
 pub struct AppState {
     pub config: Mutex<AppConfig>,
@@ -209,6 +217,7 @@ impl Default for AppConfig {
             telegram_config: default_telegram_config(),
             custom_prompt_config: default_custom_prompt_config(),
             shortcut_config: default_shortcut_config(),
+            updater_config: default_updater_config(),
         }
     }
 }
@@ -676,6 +685,16 @@ pub fn default_shortcuts() -> HashMap<String, ShortcutBinding> {
     });
 
     shortcuts
+}
+
+pub fn default_updater_config() -> UpdaterConfig {
+    UpdaterConfig {
+        auto_check_updates: default_auto_check_updates(),
+    }
+}
+
+pub fn default_auto_check_updates() -> bool {
+    true // 默认启用自动检查更新
 }
 
 

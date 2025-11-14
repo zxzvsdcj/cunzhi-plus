@@ -1,6 +1,7 @@
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use serde::{Deserialize, Serialize};
 use std::{fs, io::Write, path::PathBuf, process::Command};
+use crate::config::AppState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UpdateInfo {
@@ -23,6 +24,25 @@ pub struct UpdateProgress {
 #[tauri::command]
 pub async fn check_for_updates(app: AppHandle) -> Result<UpdateInfo, String> {
     log::info!("🔍 开始检查更新");
+    
+    // 检查是否启用了自动检查更新
+    let state = app.state::<AppState>();
+    let auto_check_enabled = {
+        let config = state.config.lock().map_err(|e| format!("获取配置失败: {}", e))?;
+        config.updater_config.auto_check_updates
+    };
+    
+    if !auto_check_enabled {
+        log::info!("⏸️ 自动检查更新已禁用，跳过检查");
+        // 返回一个表示未启用的结果
+        return Ok(UpdateInfo {
+            available: false,
+            current_version: env!("CARGO_PKG_VERSION").to_string(),
+            latest_version: env!("CARGO_PKG_VERSION").to_string(),
+            release_notes: "自动检查更新已禁用".to_string(),
+            download_url: String::new(),
+        });
+    }
     
     // 由于Tauri更新器无法处理中文tag，这里直接使用GitHub API检查
     let client = reqwest::Client::new();

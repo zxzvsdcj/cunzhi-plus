@@ -95,6 +95,10 @@ pub fn build_tauri_app() -> Builder<tauri::Wry> {
             update_shortcut_binding,
             reset_shortcuts_to_default,
 
+            // 更新器配置命令
+            get_updater_config,
+            update_auto_check_updates,
+
             // 配置管理命令
             get_config_file_path,
 

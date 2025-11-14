@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core'
 import { useMessage } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
 import { useVersionCheck } from '../../composables/useVersionCheck'
 
 const loading = ref(false)
 const message = useMessage()
+const autoCheckEnabled = ref(true) // 自动检查更新开关
 
 const {
   versionInfo,
@@ -106,11 +108,42 @@ async function handleRestartApp() {
   }
 }
 
+// 加载自动检查更新配置
+async function loadAutoCheckConfig() {
+  try {
+    const config = await invoke('get_updater_config') as any
+    if (config) {
+      autoCheckEnabled.value = config.auto_check_updates
+    }
+  }
+  catch (error) {
+    console.error('加载自动检查更新配置失败:', error)
+  }
+}
+
+// 更新自动检查更新配置
+async function handleAutoCheckToggle(enabled: boolean) {
+  try {
+    await invoke('update_auto_check_updates', { enabled })
+    autoCheckEnabled.value = enabled
+    message.success(enabled ? '已启用自动检查更新' : '已禁用自动检查更新')
+  }
+  catch (error) {
+    console.error('更新自动检查配置失败:', error)
+    message.error('更新设置失败')
+    // 恢复原值
+    autoCheckEnabled.value = !enabled
+  }
+}
+
 // 组件挂载时初始化版本信息
 onMounted(async () => {
   loading.value = true
   try {
-    await getVersionInfo()
+    await Promise.all([
+      getVersionInfo(),
+      loadAutoCheckConfig(),
+    ])
   }
   catch (error) {
     console.error('初始化版本信息失败:', error)
@@ -123,6 +156,22 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-4">
+    <!-- 自动检查更新开关 -->
+    <div class="flex items-center justify-between p-3 bg-surface-50 dark:bg-surface-800 rounded-lg border border-surface-200 dark:border-surface-700">
+      <div class="flex-1">
+        <div class="text-sm font-medium text-on-surface dark:text-on-surface mb-1">
+          自动检查更新
+        </div>
+        <div class="text-xs text-on-surface-secondary dark:text-on-surface-secondary">
+          启用后将在应用启动时自动检查是否有新版本
+        </div>
+      </div>
+      <n-switch
+        :value="autoCheckEnabled"
+        @update:value="handleAutoCheckToggle"
+      />
+    </div>
+
     <!-- 版本信息显示 -->
     <div
       v-if="!loading && versionInfo"
